@@ -15,12 +15,24 @@ Puppet::Type.type(:firewall).provide :asa, :parent => Puppet::Provider::Firewall
   @protocol = "IPv4"
 
   @resource_map = {
-    :log_level  => "log",
-    :port       => "eq",
-    :reject     => "deny",
-    :sport      => "eq",
+    :acl            => "",  
+    :destination    => "",
+    :dport          => "",
+    :log_level      => "log",
+    :port           => "eq",
+    :proto          => "",
+    :reject         => "deny",
+    :source         => "",  
+    :sport          => "eq"
   }
 
   @resource_list = [:type, :access-list, :line, :extended, :action, :protocol, :source, :sport, :destination, :dport, :log]   
 
+    def create_asa_rule()
+        source = lookupvar('source')
+    end
+
+    newfunction(:minute_from_address, :type => :rvalue) do |args|
+        
+    end
 end
