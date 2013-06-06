@@ -6,24 +6,62 @@
 # This hash is for testing a line conversion to a hash of parameters
 # which will be used to create a resource.
 ARGS_TO_HASH = {
-  'long_rule_1' => {
-    :line => '-A INPUT -s 1.1.1.1/32 -d 1.1.1.1/32 -p tcp -m multiport --dports 7061,7062 -m multiport --sports 7061,7062 -m comment --comment "000 allow foo" -j ACCEPT',
-    :table => 'filter',
-    :compare_all => true,
-    :params => {
-      :action => "accept",
-      :chain => "INPUT",
-      :destination => "1.1.1.1/32",
-      :dport => ["7061","7062"],
-      :ensure => :present,
-      :line => '-A INPUT -s 1.1.1.1/32 -d 1.1.1.1/32 -p tcp -m multiport --dports 7061,7062 -m multiport --sports 7061,7062 -m comment --comment "000 allow foo" -j ACCEPT',
-      :name => "000 allow foo",
-      :proto => "tcp",
-      :provider => "iptables",
-      :source => "1.1.1.1/32",
-      :sport => ["7061","7062"],
-      :table => "filter",
+    'permit_udp_53' => {
+        :line        => 'access-list access_in extended permit udp host 8.8.8.8 eq domain any',
+        :compare_all => true,
+        :params => {
+            :acl         => 'access_in',
+            :action      => 'accept',
+            :proto       => 'udp',
+            :source      => '8.8.8.8',
+            :sport       => '53',
+            :destination => 'any',        
+        },
     },
-  },
-
+    'deny_ip_subnet_1' => {
+        :line        => 'access-list access_in extended deny ip 192.168.0.0 255.255.0.0 any ',
+        :compare_all => true,
+        :params => {
+            :acl         => 'access_in',
+            :action      => 'reject',
+            :proto       => 'ip',
+            :source      => '192.168.0.0/16',
+            :destination => 'any',        
+        },
+    },
+    'permit_tcp_3389_in' => {
+        :line        => 'access-list access_in extended permit tcp any host 10.100.25.100 eq 3389',
+        :compare_all => true,
+        :params => {
+            :acl         => 'access_in',
+            :action      => 'accept',
+            :proto       => 'tcp',
+            :source      => 'any',            
+            :destination => '10.100.25.100',        
+            :dport       => '3389',
+        },
+    },    
+    'deny_all_in' => {
+        :line        => 'access-list access_in extended deny ip any any ',
+        :compare_all => true,
+        :params => {
+            :acl         => 'access_in',
+            :action      => 'reject',
+            :proto       => 'ip',
+            :source      => 'any',            
+            :destination => 'any',        
+        },
+    },    
+    
+    'allow_all_out' => {
+        :line        => 'access-list access_out extended permit ip any any ',
+        :compare_all => true,
+        :params => {
+            :acl         => 'access_out',
+            :action      => 'accept',
+            :proto       => 'ip',
+            :source      => 'any',            
+            :destination => 'any',          
+        },
+    },    
 }
