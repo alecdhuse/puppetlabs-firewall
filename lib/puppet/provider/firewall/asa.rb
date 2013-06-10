@@ -33,38 +33,70 @@ Puppet::Type.type(:firewall).provide :asa, :parent => Puppet::Provider::Firewall
     
         # Format the action to ASA language
         if lookupvar('action') == "accept"
-            action = "permit"
+            rule_action = "permit"
         elsif lookupvar('action') == "reject"
-            action = "deny"
+            rule_action = "deny"
         end
     
         # Check to see if there is a destination, if not set to any.
         if lookupvar('destination') == :undefined
-            destination = "any"
+            rule_destination = "any"
         elsif
-            destination = normalize_ip(lookupvar('destination'))
+            rule_destination = normalize_ip(lookupvar('destination'))
         end
     
         # Check to see if there is a source, if not set to any.
         if lookupvar('source') == :undefined
-            source = "any"
+            rule_source = "any"
         elsif
-            source = normalize_ip(lookupvar('source'))
+            rule_source = normalize_ip(lookupvar('source'))
         end
-    end
-
-    newfunction(:minute_from_address, :type => :rvalue) do |args|
         
+        # Convert port numbers to Cisco port protocol names.  
+        # This is not nessesary to execute the commands, 
+        # but when testing we need to know what how the command will be be stored on the ASA.        
+        rule_protocol = lookupvar('proto')
+        rule_sport    = lookupvar('sport')
+        rule_dport    = lookupvar('dport')
+        
+        if rule_protocol.downcase == "icmp"
+            rule_sport = Puppet::Util::asa.icmp_number_to_name(rule_sport)
+            rule_dport = Puppet::Util::asa.icmp_number_to_name(rule_dport)
+        elsif rule_protocol.downcase == "ip"
+            # No port info fo ip
+        elsif rule_protocol.downcase == "tcp"
+            rule_sport = Puppet::Util::asa.tcp_port_number_to_name(rule_sport)
+            rule_dport = Puppet::Util::asa.tcp_port_number_to_name(rule_dport)
+        elsif rule_protocol.downcase == "udp"
+            rule_sport = Puppet::Util::asa.udp_port_number_to_name(rule_sport)
+            rule_dport = Puppet::Util::asa.udp_port_number_to_name(rule_dport)
+        else
+            rule_sport = ""
+            rule_dport = ""           
+        end
+        
+        # Prepend " eq " to port name
+        if rule_sport != ""
+            rule_sport = " eq " + rule_sport
+            
+        if rule_dport != ""
+            rule_dport = " eq " + rule_dport            
+        
+        rule_type     = "access-list"
+        rule_extended = "extended"
+        
+        rule = rule_type + " " + lookupvar('acl') + " " + rule_extended + " " + rule_action + " " + rule_protocol + " " + rule_source + rule_sport + " " + rule_destination + rule_dport
     end
-
-    # Normalize IP and subnet mask, ASA rules don't use cider.
+    
     def normalize_ip(ip_string)
+        # Normalize IP and subnet mask; ASA rules don't use cider.
+        
         cider = Puppet::Util::IPCidr.new(ip_string)
         
         if cider.netmask == "255.255.255.255"
-            normIP = "host " + cider.ip
+            normIP = "host " + cider.to_string
         elsif
-            normIP = cider.ip + " " + cider.netmask 
+            normIP = cider.to_string + " " + cider.netmask 
         end
         
         return normIP       
